@@ -52,8 +52,10 @@ jobs:
         echo "CFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations -I/opt/homebrew/include -I/usr/local/include" >> $GITHUB_ENV
         echo "CXXFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations -I/opt/homebrew/include -I/usr/local/include" >> $GITHUB_ENV
 
-    - name: Build Missing Legacy Sub-Dependencies (libfragmentzip, img4tool, libpatchfinder, libipatcher)
+    - name: Build Missing Legacy Sub-Dependencies (libfragmentzip, libimg3tool, img4tool, libpatchfinder, libipatcher)
       run: |
+        export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/opt/homebrew/lib/pkgconfig:$PKG_CONFIG_PATH"
+
         # 1. Build libgeneral
         git clone https://github.com/tihmstar/libgeneral.git
         cd libgeneral && ./autogen.sh && make && sudo make install && cd ..
@@ -62,15 +64,19 @@ jobs:
         git clone https://github.com/tihmstar/libfragmentzip.git
         cd libfragmentzip && ./autogen.sh && make && sudo make install && cd ..
 
-        # 3. Build img4tool
+        # 3. Build libimg3tool (Crucial requirement for patchfinder)
+        git clone --recursive https://github.com/tihmstar/libimg3tool.git
+        cd libimg3tool && ./autogen.sh && make && sudo make install && cd ..
+
+        # 4. Build img4tool
         git clone --recursive https://github.com/tihmstar/img4tool.git
         cd img4tool && ./autogen.sh && make && sudo make install && cd ..
 
-        # 4. Build libpatchfinder (Required by libipatcher)
+        # 5. Build libpatchfinder
         git clone --recursive https://github.com/tihmstar/libpatchfinder.git
         cd libpatchfinder && ./autogen.sh && make && sudo make install && cd ..
 
-        # 5. Build libipatcher
+        # 6. Build libipatcher
         git clone --recursive https://github.com/tihmstar/libipatcher.git
         cd libipatcher && ./autogen.sh && make && sudo make install && cd ..
 

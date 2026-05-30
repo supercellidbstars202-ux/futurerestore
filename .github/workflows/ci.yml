@@ -15,8 +15,8 @@ on:
 
 jobs:
   macOS:
-    # We MUST use Intel architecture because your scripts extract 'bootstrap_x86_64.tar.zst'
-    runs-on: macos-15-intel
+    # Switched to the macOS 14 runner environment (ARM64 Apple Silicon)
+    runs-on: macos-14
     steps:
     - name: Checkout
       id: Checkout
@@ -25,26 +25,26 @@ jobs:
         submodules: 'true'
         fetch-depth: 0
 
-    - name: Select Oldest Supported Xcode
+    - name: Select Xcode 15 for Legacy Toolchain
       id: Update-Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        # Xcode 15.4 is the absolute oldest toolchain present on modern Intel images
+        # Xcode 15.4 is perfectly native and stable on the macOS 14 runner
         xcode-version: '15.4'
 
     - name: Install Build Dependencies & Setup Paths
       run: |
-        # Force-install command line utilities that your script calls
+        # Force-install tools your scripts rely on
         brew install zstd cmake gnu-tar
 
-        # Map out PROCURSUS safely 
+        # Establish PROCURSUS target directory
         PROCURSUS="/opt/procursus"
         echo "PROCURSUS=$PROCURSUS" >> $GITHUB_ENV
         
-        # We structurally preserve your legacy $PATH string, but append system $PATH so 'cmake' can be seen!
+        # Injects your exact legacy PATH configuration, but preserves the system PATH at the end so tools stay visible
         echo "PATH=$PROCURSUS/bin:$PROCURSUS/libexec/gnubin:/usr/local/lib/ruby/gems/2.7.0/bin:/usr/local/opt/ruby@2.7/bin:/usr/local/opt/pipx_bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Users/runner/.yarn/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH" >> $GITHUB_ENV
         
-        # COMPILER COMPATIBILITY FLAGS: Tell Xcode 15 to build code exactly like macOS 12/13 did
+        # LEGACY FLAGS: Tells Xcode 15 to loosen strictness rules to avoid C compilation fatal crashes
         echo "MACOSX_DEPLOYMENT_TARGET=12.0" >> $GITHUB_ENV
         echo "CFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations" >> $GITHUB_ENV
         echo "CXXFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations" >> $GITHUB_ENV
@@ -52,7 +52,7 @@ jobs:
     - name: macOS Build
       id: macOS-Build
       run: |
-        # Ensure workspace subfolders are explicitly established for output storage
+        # Explicitly build the directory mappings workspace
         mkdir -p .github/workflows
         
         ${{ github.workspace }}/.github/workflows/mac-bootstrap.sh
@@ -103,7 +103,7 @@ jobs:
         id: Linux
         uses: addnab/docker-run-action@v3
         with:
-          image: debian:buster-slim
+          image: deb;ian:buster-slim
           options: -v ${{ github.workspace }}/..:/tmp/Builder/repos/
           run: |
             /tmp/Builder/repos/futurerestore/.github/workflows/linux-bootstrap.sh

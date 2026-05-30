@@ -32,8 +32,8 @@ jobs:
 
     - name: Install Build Dependencies & Setup Paths
       run: |
-        # Fixed package name to openssl@3
-        brew install zstd cmake gnu-tar pkg-config libplist libimobiledevice libirecovery libusb libimobiledevice-glue libzip autoconf automake libtool openssl@3
+        # Added binutils to provide the standard structural header requirements for patchfinder
+        brew install zstd cmake gnu-tar pkg-config libplist libimobiledevice libirecovery libusb libimobiledevice-glue libzip autoconf automake libtool openssl@3 binutils
 
         # Establish PROCURSUS target directory
         PROCURSUS="/opt/procursus"
@@ -52,7 +52,7 @@ jobs:
         echo "CFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations -I/opt/homebrew/include -I/usr/local/include" >> $GITHUB_ENV
         echo "CXXFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations -I/opt/homebrew/include -I/usr/local/include" >> $GITHUB_ENV
 
-    - name: Build Missing Legacy Sub-Dependencies (libfragmentzip, img4tool, libipatcher)
+    - name: Build Missing Legacy Sub-Dependencies (libfragmentzip, img4tool, libpatchfinder, libipatcher)
       run: |
         export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
         
@@ -68,7 +68,11 @@ jobs:
         git clone --recursive https://github.com/tihmstar/img4tool.git
         cd img4tool && ./autogen.sh && make && sudo make install && cd ..
 
-        # 4. Build libipatcher
+        # 4. Build libpatchfinder (Required by libipatcher)
+        git clone --recursive https://github.com/tihmstar/libpatchfinder.git
+        cd libpatchfinder && ./autogen.sh && make && sudo make install && cd ..
+
+        # 5. Build libipatcher
         git clone --recursive https://github.com/tihmstar/libipatcher.git
         cd libipatcher && ./autogen.sh && make && sudo make install && cd ..
 
@@ -150,7 +154,7 @@ jobs:
           mv ${{ github.workspace }}/.github/workflows/futurerestore3.tar.xz ${{ github.workspace }}/.github/workflows/$(cat ${{ github.workspace }}/.github/workflows/name3.txt)
 
       - name: futurerestore Linux x86_64 RELEASE Archive
-        id: futurerestore-Linux-x86_64-RELEASE-Archive
+        /id: futurerestore-Linux-x86_64-RELEASE-Archive
         uses: actions/upload-artifact@v4
         with:
           name: futurerestore-Linux-x86_64-RELEASE

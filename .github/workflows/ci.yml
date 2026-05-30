@@ -32,8 +32,8 @@ jobs:
 
     - name: Install Build Dependencies & Setup Paths
       run: |
-        # Install standard core dependencies
-        brew install zstd cmake gnu-tar pkg-config libplist libimobiledevice libirecovery libusb libimobiledevice-glue libzip autoconf automake libtool openopenssl@3
+        # Fixed package name to openssl@3
+        brew install zstd cmake gnu-tar pkg-config libplist libimobiledevice libirecovery libusb libimobiledevice-glue libzip autoconf automake libtool openssl@3
 
         # Establish PROCURSUS target directory
         PROCURSUS="/opt/procursus"

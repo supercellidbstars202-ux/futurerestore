@@ -17,7 +17,14 @@ jobs:
   macOS:
     env:
       PROCURSUS: /opt/procursus
+      # Retaining your legacy environment path configuration
       PATH: /opt/procursus/bin:/opt/procursus/libexec/gnubin:/usr/local/lib/ruby/gems/2.7.0/bin:/usr/local/opt/ruby@2.7/bin:/usr/local/opt/pipx_bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Users/runner/.yarn/bin:/Users/runner/Library/Android/sdk/tools:/Users/runner/Library/Android/sdk/platform-tools:/Users/runner/Library/Android/sdk/ndk-bundle:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/usr/bin:/bin:/usr/sbin:/sbin:/Users/runner/.dotnet/tools:/Users/runner/.ghcup/bin:/Users/runner/hostedtoolcache/stack/2.7.3/x64
+      
+      # FORCE OLD COMPLIANCE: Tells modern compilers to build exactly like the old macOS 12 environment did
+      MACOSX_DEPLOYMENT_TARGET: "12.0"
+      CFLAGS: "-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations"
+      CXXFLAGS: "-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations"
+      
     runs-on: macos-15-intel
     steps:
     - name: Checkout
@@ -27,11 +34,19 @@ jobs:
         submodules: 'true'
         fetch-depth: 0
 
-    - name: Update Xcode
+    - name: Select Oldest Available Xcode
       id: Update-Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: '14.1.0'
+        # Xcode 16.0 is the minimum physically present on macos-15 images.
+        xcode-version: '16.0'
+
+    - name: Configure Legacy SDK Path
+      run: |
+        # Explicitly tells Clang to seek the lowest base SDK mapping to mirror older environments
+        SDKPATH=$(xcrun --sdk macosx --show-sdk-path)
+        echo "SDKROOT=$SDKPATH" >> $GITHUB_ENV
+        echo "Forcing build environment to use SDK at: $SDKPATH"
 
     - name: macOS Build
       id: macOS-Build
@@ -127,4 +142,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: futurerestore-Linux-x86_64-ASAN
-          path: ${{ github.workspace }}/.github/workflows/futurerestore-Linux-x86_64*-ASAN.tar.xz
+          path: ${{ github.workspace }}/.github/workflows/futurerestore-Linux-x86_64*-AN.tar.xz

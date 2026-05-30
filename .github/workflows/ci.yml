@@ -32,8 +32,8 @@ jobs:
 
     - name: Install Build Dependencies & Setup Paths
       run: |
-        # Install tools and common dependencies that idevicerestore/futurerestore expect
-        brew install zstd cmake gnu-tar libplist libimobiledevice
+        # Install tools and all essential libimobiledevice/irecovery stack elements
+        brew install zstd cmake gnu-tar pkg-config libplist libimobiledevice libirecovery libusb libimobiledevice-glue
 
         # Establish PROCURSUS target directory
         PROCURSUS="/opt/procursus"
@@ -42,11 +42,12 @@ jobs:
         # Inject standard path parameters
         echo "PATH=$PROCURSUS/bin:$PROCURSUS/libexec/gnubin:/usr/local/lib/ruby/gems/2.7.0/bin:/usr/local/opt/ruby@2.7/bin:/usr/local/opt/pipx_bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Users/runner/.yarn/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH" >> $GITHUB_ENV
         
-        # FIX: Expose Apple Silicon Homebrew paths so compilers can find plist/plist.h
+        # Expose Apple Silicon Homebrew paths so compilers can resolve both headers and libraries
         echo "CPATH=/opt/homebrew/include:/usr/local/include:$CPATH" >> $GITHUB_ENV
         echo "LIBRARY_PATH=/opt/homebrew/lib:/usr/local/lib:$LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
         
-        # LEGACY FLAGS: Loosen Xcode 15 rules for older structural syntax
+        # LEGACY FLAGS: Suppress modern Xcode compiler syntax failures
         echo "MACOSX_DEPLOYMENT_TARGET=12.0" >> $GITHUB_ENV
         echo "CFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations -I/opt/homebrew/include" >> $GITHUB_ENV
         echo "CXXFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations -I/opt/homebrew/include" >> $GITHUB_ENV

@@ -32,8 +32,8 @@ jobs:
 
     - name: Install Build Dependencies & Setup Paths
       run: |
-        # Install tools and all essential libimobiledevice/irecovery stack elements
-        brew install zstd cmake gnu-tar pkg-config libplist libimobiledevice libirecovery libusb libimobiledevice-glue
+        # Added libzip to satisfy the missing <zip.h> header requirement
+        brew install zstd cmake gnu-tar pkg-config libplist libimobiledevice libirecovery libusb libimobiledevice-glue libzip
 
         # Establish PROCURSUS target directory
         PROCURSUS="/opt/procursus"

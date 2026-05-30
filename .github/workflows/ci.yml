@@ -32,25 +32,45 @@ jobs:
 
     - name: Install Build Dependencies & Setup Paths
       run: |
-        # Added libzip to satisfy the missing <zip.h> header requirement
-        brew install zstd cmake gnu-tar pkg-config libplist libimobiledevice libirecovery libusb libimobiledevice-glue libzip
+        # Install standard system building tools and core dependencies
+        brew install zstd cmake gnu-tar pkg-config libplist libimobiledevice libirecovery libusb libimobiledevice-glue libzip autoconf automake libtool
 
         # Establish PROCURSUS target directory
         PROCURSUS="/opt/procursus"
         echo "PROCURSUS=$PROCURSUS" >> $GITHUB_ENV
         
-        # Inject standard path parameters
+        # Inject paths safely
         echo "PATH=$PROCURSUS/bin:$PROCURSUS/libexec/gnubin:/usr/local/lib/ruby/gems/2.7.0/bin:/usr/local/opt/ruby@2.7/bin:/usr/local/opt/pipx_bin:/Users/runner/.cargo/bin:/usr/local/opt/curl/bin:/usr/local/bin:/usr/local/sbin:/Users/runner/bin:/Users/runner/.yarn/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH" >> $GITHUB_ENV
         
-        # Expose Apple Silicon Homebrew paths so compilers can resolve both headers and libraries
+        # Include custom local paths (/usr/local/) where our custom source compiled dependencies will live
         echo "CPATH=/opt/homebrew/include:/usr/local/include:$CPATH" >> $GITHUB_ENV
         echo "LIBRARY_PATH=/opt/homebrew/lib:/usr/local/lib:$LIBRARY_PATH" >> $GITHUB_ENV
         echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
         
-        # LEGACY FLAGS: Suppress modern Xcode compiler syntax failures
+        # LEGACY FLAGS: Prevent warnings from crashing compilation engines on Xcode 15
         echo "MACOSX_DEPLOYMENT_TARGET=12.0" >> $GITHUB_ENV
-        echo "CFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations -I/opt/homebrew/include" >> $GITHUB_ENV
-        echo "CXXFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations -I/opt/homebrew/include" >> $GITHUB_ENV
+        echo "CFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations -I/opt/homebrew/include -I/usr/local/include" >> $GITHUB_ENV
+        echo "CXXFLAGS=-Wno-error=implicit-function-declaration -Wno-error=unsupported-cb -Wno-deprecated-declarations -I/opt/homebrew/include -I/usr/local/include" >> $GITHUB_ENV
+
+    - name: Build Missing Legacy Sub-Dependencies (libfragmentzip)
+      run: |
+        export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+        
+        # 1. Build libgeneral (dependency for libfragmentzip)
+        git clone https://github.com/tihmstar/libgeneral.git
+        cd libgeneral
+        ./autogen.sh
+        make
+        sudo make install
+        cd ..
+
+        # 2. Build libfragmentzip
+        git clone https://github.com/tihmstar/libfragmentzip.git
+        cd libfragmentzip
+        ./autogen.sh
+        make
+        sudo make install
+        cd ..
 
     - name: macOS Build
       id: macOS-Build
